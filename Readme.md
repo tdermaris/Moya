@@ -209,6 +209,46 @@ provider.request(.zen) { result in
 }
 ```
 
+You can have a NetworkManager class that works with PromiseKit and have all your network calls only with two functions:
+
+func callApiJSON<T: TargetType, U: Decodable>(_ target: T, _ resource: U.Type?) -> Promise<Decodable> {
+        return Promise<Decodable> { seal in
+            provider.request(target as! YourApi, completion: { (result) in
+                switch result {
+                case let .success(moyaResponse):
+                    var decodableModel: Decodable
+                    do{
+                        decodableModel = try JSONDecoder().decode(U.self, from: moyaResponse.data)
+                        seal.fulfill(decodableModel)
+                    }catch let err {
+                        seal.reject(err)
+                    }
+                case let .failure(error):
+                    seal.reject(error)
+                }
+            })
+        }
+    }
+    
+    func callApiArray<T: TargetType, U: Decodable>(_ target: T, _ resource: U.Type?) -> Promise<[Decodable]> {
+        return Promise<[Decodable]> { seal in
+            provider.request(target as! YourApi, completion: { (result) in
+                switch result {
+                case let .success(moyaResponse):
+                    var decodableModel = [Decodable]()
+                    do{
+                        decodableModel = try JSONDecoder().decode([U].self, from: moyaResponse.data)
+                        seal.fulfill(decodableModel)
+                    }catch let err {
+                        seal.reject(err)
+                    }
+                case let .failure(error):
+                    seal.reject(error)
+                }
+            })
+        }
+    }
+
 That's a basic example. Many API requests need parameters. Moya encodes these
 into the enum you use to access the endpoint, like this:
 
